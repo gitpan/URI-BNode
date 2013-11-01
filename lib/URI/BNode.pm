@@ -11,6 +11,8 @@ use Data::UUID::NCName ();
 
 # lolol
 
+# XXX i've been advised to switch this to Data::GUID::Any
+
 BEGIN {
     eval { require Data::UUID::MT };
     if ($@) {
@@ -59,10 +61,10 @@ my $PN_CHARS_BASE = qr/[A-Za-z\N{U+00C0}-\N{U+00D6}}\N{U+00D8}-\N{U+00F6}
 
 # from the turtle spec: http://www.w3.org/TR/turtle/#BNodes
 my $BNODE = qr/^\s*(_:)?((?:$PN_CHARS_BASE|[_0-9])
-                   (?:$PN_CHARS_BASE|[-._0-9\N{U+00B7}
-                           \N{U+0300}-\N{U+036F}\N{U+203F}-\N{U+2040}]+)?
-                   (?:$PN_CHARS_BASE|[-_0-9\N{U+00B7}
-                           \N{U+0300}-\N{U+036F}\N{U+203F}-\N{U+2040}]+)?)
+                   (?:$PN_CHARS_BASE|[._0-9\N{U+00B7}
+                           \N{U+0300}-\N{U+036F}\N{U+203F}-\N{U+2040}-]+)?
+                   (?:$PN_CHARS_BASE|[_0-9\N{U+00B7}
+                           \N{U+0300}-\N{U+036F}\N{U+203F}-\N{U+2040}-]+)?)
                \s*$/osmx;
 
 
@@ -72,11 +74,11 @@ URI::BNode - RDF blank node identifiers which are also URI objects
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
