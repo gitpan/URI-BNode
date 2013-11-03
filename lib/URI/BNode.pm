@@ -6,67 +6,31 @@ use warnings FATAL => 'all';
 
 use base qw(URI);
 
-use Carp ();
+use Carp               ();
+use Scalar::Util       ();
+use Data::GUID::Any    ();
 use Data::UUID::NCName ();
 
 # lolol
 
-# XXX i've been advised to switch this to Data::GUID::Any
-
-BEGIN {
-    eval { require Data::UUID::MT };
-    if ($@) {
-        undef $@;
-        eval { require OSSP::uuid };
-        if ($@) {
-            undef $@;
-            eval { require Data::UUID::LibUUID };
-            if ($@) {
-                undef $@;
-                eval { require UUID::Tiny };
-                if ($@) {
-                    die 'Failed to load Data::UUID::MT, OSSP::uuid, ' .
-                        'Data::UUID::LibUUID or UUID::Tiny.';
-                }
-                else {
-                    *_uuid = sub () {
-                        UUID::Tiny::create_uuid_as_string(&UUID::Tiny::UUID_V4)
-                      };
-                }
-            }
-            else {
-                *_uuid = sub () { Data::UUID::LibUUID::new_uuid_string(4) };
-            }
-        }
-        else {
-            *_uuid = sub () {
-                my $u = OSSP::uuid->new;
-                $u->make('v4');
-                $u->export('str');
-            };
-        }
-    }
-    else {
-        our $UUIDGEN = Data::UUID::MT->new;
-        *_uuid = sub () { $UUIDGEN->create_string };
-    }
-}
-
-my $PN_CHARS_BASE = qr/[A-Za-z\N{U+00C0}-\N{U+00D6}}\N{U+00D8}-\N{U+00F6}
-                           \N{U+00F8}-\N{U+02FF}\N{U+0370}-\N{U+037D}
-                           \N{U+037F}-\N{U+1FFF}\N{U+200C}-\N{U+200D}
-                           \N{U+2070}-\N{U+218F}\N{U+2C00}-\N{U+2FEF}
-                           \N{U+3001}-\N{U+D7FF}\N{U+F900}-\N{U+FDCF}
-                           \N{U+FDF0}-\N{U+FFFD}\N{U+10000}-\N{U+EFFFF}]+/x;
+our $PN_CHARS_BASE = qr/[A-Za-z\x{00C0}-\x{00D6}}\x{00D8}-\x{00F6}
+                           \x{00F8}-\x{02FF}\x{0370}-\x{037D}
+                           \x{037F}-\x{1FFF}\x{200C}-\x{200D}
+                           \x{2070}-\x{218F}\x{2C00}-\x{2FEF}
+                           \x{3001}-\x{D7FF}\x{F900}-\x{FDCF}
+                           \x{FDF0}-\x{FFFD}\x{10000}-\x{EFFFF}]/ox;
 
 # from the turtle spec: http://www.w3.org/TR/turtle/#BNodes
-my $BNODE = qr/^\s*(_:)?((?:$PN_CHARS_BASE|[_0-9])
-                   (?:$PN_CHARS_BASE|[._0-9\N{U+00B7}
-                           \N{U+0300}-\N{U+036F}\N{U+203F}-\N{U+2040}-]+)?
-                   (?:$PN_CHARS_BASE|[_0-9\N{U+00B7}
-                           \N{U+0300}-\N{U+036F}\N{U+203F}-\N{U+2040}-]+)?)
-               \s*$/osmx;
+our $BNODE = qr/^\s*(_:)?((?:$PN_CHARS_BASE|[_0-9])
+                    (?:$PN_CHARS_BASE|[._0-9\x{00B7}
+                            \x{0300}-\x{036F}\x{203F}-\x{2040}-])*
+                    (?:$PN_CHARS_BASE|[_0-9\x{00B7}
+                            \x{0300}-\x{036F}\x{203F}-\x{2040}-])*)
+                \s*$/osmx;
 
+sub _uuid () {
+    lc Data::GUID::Any::v4_guid_as_string();
+}
 
 =head1 NAME
 
@@ -74,11 +38,11 @@ URI::BNode - RDF blank node identifiers which are also URI objects
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -101,7 +65,7 @@ be passed to the L<URI> constructor.
 sub new {
     my $class = shift;
 
-    my $bnode = _validate(@_) if @_ == 1;
+    my $bnode = _validate(@_);
     return URI->new(@_) unless defined $bnode;
 
     bless \$bnode, $class;
@@ -123,6 +87,10 @@ sub _validate {
     "_:$val";
 }
 
+=head2 name [$NEWVAL]
+
+Alias for L</opaque>.
+
 =head2 opaque [$NEWVAL]
 
 Replace the blank node's value with a new one. This method will croak
@@ -134,17 +102,42 @@ L<http://www.w3.org/TR/turtle/#BNodes>.
 sub opaque {
     my $self = shift;
     if (@_) {
-        my $val = _validate(@_);
-        Carp::croak("Blank node identifier doesn't match Turtle spec");
+        my $val = _validate(@_) or
+            Carp::croak("Blank node identifier doesn't match Turtle spec");
         $$self = $val;
     }
 
     (split(/:/, $$self, 2))[1];
 }
 
+*name = \&opaque;
+
 # dirty little scheme function
 sub _scheme {
     return '_';
+}
+
+=head2 from_uuid_urn $UUID
+
+=cut
+
+sub from_uuid_urn {
+    my ($self, $uuid) = @_;
+    return unless defined $uuid and Scalar::Util::blessed($uuid)
+        and $uuid->isa('URI::urn::uuid');
+    my $class = ref $self || $self;
+    $class->new('_:' . Data::UUID::NCName::to_ncname($uuid->uuid));
+}
+
+=head2 to_uuid_urn
+
+=cut
+
+sub to_uuid_urn {
+    my $self   = shift;
+    my $opaque = $self->opaque;
+    return unless $opaque =~ /^[A-J][0-9A-Za-z_-]{21}(?:[0-9A-Z]{4})?$/;
+    URI->new('urn:uuid:' . Data::UUID::NCName::from_ncname($opaque));
 }
 
 =head1 AUTHOR
@@ -158,8 +151,6 @@ rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=URI-BNode>.  I will
 be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
-
-
 
 
 =head1 SUPPORT

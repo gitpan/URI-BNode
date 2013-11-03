@@ -2,7 +2,7 @@ NAME
     URI::BNode - RDF blank node identifiers which are also URI objects
 
 VERSION
-    Version 0.02
+    Version 0.03
 
 SYNOPSIS
         my $bnode = URI::BNode->new;
@@ -17,11 +17,16 @@ METHODS
     Turtle spec. Other values, including other URIs, will be passed to the
     URI constructor.
 
+  name [$NEWVAL]
+    Alias for "opaque".
+
   opaque [$NEWVAL]
     Replace the blank node's value with a new one. This method will croak if
     passed a $NEWVAL which doesn't match the spec in
     <http://www.w3.org/TR/turtle/#BNodes>.
 
+  from_uuid_urn $UUID
+  to_uuid_urn
 AUTHOR
     Dorian Taylor, "<dorian at cpan.org>"
 

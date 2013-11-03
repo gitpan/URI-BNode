@@ -21,10 +21,11 @@ no_index:
     - inc
     - t
 requires:
+  Data::GUID::Any: 0
   Data::UUID::NCName: 0
   URI: 0
-  UUID::Tiny: 0
+  URI::urn::uuid: 0
   perl: 5.10.0
 resources:
   license: http://apache.org/licenses/LICENSE-2.0
-version: 0.02
+version: 0.03
