@@ -38,17 +38,47 @@ URI::BNode - RDF blank node identifiers which are also URI objects
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
     my $bnode = URI::BNode->new;
 
     print "$bnode\n"; # something like _:EH_kW827XQ6vvX0yF8YzRA
+
+=head1 DESCRIPTION
+
+This module has two purposes:
+
+=over 4
+
+=item 1
+
+Provide a reliable factory interface for generating RDF blank nodes
+(via random UUIDs permuted through L<Data::UUID::NCName>).
+
+=item 2
+
+When an RDF blank node class is a subclass of URI, you can use
+identity tests to make more robust RDF interfaces, like so:
+
+    $node->isa('URI');        # either URI or bnode, but not literal
+    $node->isa('URI::BNode'); # narrow it down further
+
+Along the same vein, coerce string literals into the correct class by
+heuristic:
+
+    my $subject = '_:foo';
+    my $node = URI::BNode->new($subject); # _:foo becomes a bnode
+
+    # URI::BNode->new('http://foo/') would properly become
+    # a URI::http object.
+
+=cut
 
 =head1 METHODS
 
@@ -93,9 +123,9 @@ Alias for L</opaque>.
 
 =head2 opaque [$NEWVAL]
 
-Replace the blank node's value with a new one. This method will croak
-if passed a C<$NEWVAL> which doesn't match the spec in
-L<http://www.w3.org/TR/turtle/#BNodes>.
+Retrieve or, if supplied a value, replace the blank node's value with
+a new one. This method will croak if passed a C<$NEWVAL> which doesn't
+match the spec in L<http://www.w3.org/TR/turtle/#BNodes>.
 
 =cut
 
@@ -119,17 +149,23 @@ sub _scheme {
 
 =head2 from_uuid_urn $UUID
 
+Takes a L<URI::urn::uuid> object and turns it into a blank node. Can
+be invoked as either a class or an instance method.
+
 =cut
 
 sub from_uuid_urn {
-    my ($self, $uuid) = @_;
+    my ($class, $uuid) = @_;
     return unless defined $uuid and Scalar::Util::blessed($uuid)
         and $uuid->isa('URI::urn::uuid');
-    my $class = ref $self || $self;
+    $class = ref $class || $class;
     $class->new('_:' . Data::UUID::NCName::to_ncname($uuid->uuid));
 }
 
 =head2 to_uuid_urn
+
+Takes a blank node (in L<the proper form|Data::UUID::NCName>) and
+turns it into a L<URI::urn::uuid> object.
 
 =cut
 
@@ -138,6 +174,44 @@ sub to_uuid_urn {
     my $opaque = $self->opaque;
     return unless $opaque =~ /^[A-J][0-9A-Za-z_-]{21}(?:[0-9A-Z]{4})?$/;
     URI->new('urn:uuid:' . Data::UUID::NCName::from_ncname($opaque));
+}
+
+=head2 skolemize $AUTHORITY
+
+Return the skolemized URI (C<$AUTHORITY/.well-known/genid/...>) for a
+given blank node. See
+L<RDF 1.1 Concepts|http://www.w3.org/TR/rdf11-concepts/#section-skolemization>.
+
+=cut
+
+sub skolemize {
+    my ($self, $base) = @_;
+    return unless Scalar::Util::blessed($base) and $base->isa('URI')
+        and $base->can('authority') and $base->can('path');
+    $base = $base->canonical->clone;
+    $base->path('/.well-known/genid/' . $self->opaque);
+    $base;
+}
+
+=head2 de_skolemize $URI
+
+Take a skolemized URI like C<http://foo.com/.well-known/genid/asdf>
+and turn it into C<_:asdf>.
+
+=cut
+
+sub de_skolemize {
+    my ($class, $uri) = @_;
+    return unless Scalar::Util::blessed($uri) and $uri->isa('URI')
+        and $uri->can('authority') and $uri->can('path')
+            and $uri->path =~ m!^/.well-known/genid/(.*)!;
+
+    # check this sucka up front
+    my $candidate = _validate($1) or return;
+
+    # this is a static method
+    $class = ref $class || $class;
+    $class->new($candidate);
 }
 
 =head1 AUTHOR

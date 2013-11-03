@@ -2,12 +2,33 @@ NAME
     URI::BNode - RDF blank node identifiers which are also URI objects
 
 VERSION
-    Version 0.03
+    Version 0.04
 
 SYNOPSIS
         my $bnode = URI::BNode->new;
 
         print "$bnode\n"; # something like _:EH_kW827XQ6vvX0yF8YzRA
+
+DESCRIPTION
+    This module has two purposes:
+
+    1   Provide a reliable factory interface for generating RDF blank nodes
+        (via random UUIDs permuted through Data::UUID::NCName).
+
+    2   When an RDF blank node class is a subclass of URI, you can use
+        identity tests to make more robust RDF interfaces, like so:
+
+            $node->isa('URI');        # either URI or bnode, but not literal
+            $node->isa('URI::BNode'); # narrow it down further
+
+        Along the same vein, coerce string literals into the correct class
+        by heuristic:
+
+            my $subject = '_:foo';
+            my $node = URI::BNode->new($subject); # _:foo becomes a bnode
+
+            # URI::BNode->new('http://foo/') would properly become
+            # a URI::http object.
 
 METHODS
   new [$ID]
@@ -21,12 +42,27 @@ METHODS
     Alias for "opaque".
 
   opaque [$NEWVAL]
-    Replace the blank node's value with a new one. This method will croak if
-    passed a $NEWVAL which doesn't match the spec in
-    <http://www.w3.org/TR/turtle/#BNodes>.
+    Retrieve or, if supplied a value, replace the blank node's value with a
+    new one. This method will croak if passed a $NEWVAL which doesn't match
+    the spec in <http://www.w3.org/TR/turtle/#BNodes>.
 
   from_uuid_urn $UUID
+    Takes a URI::urn::uuid object and turns it into a blank node. Can be
+    invoked as either a class or an instance method.
+
   to_uuid_urn
+    Takes a blank node (in the proper form) and turns it into a
+    URI::urn::uuid object.
+
+  skolemize $AUTHORITY
+    Return the skolemized URI ("$AUTHORITY/.well-known/genid/...") for a
+    given blank node. See RDF 1.1 Concepts
+    <http://www.w3.org/TR/rdf11-concepts/#section-skolemization>.
+
+  de_skolemize $URI
+    Take a skolemized URI like "http://foo.com/.well-known/genid/asdf" and
+    turn it into "_:asdf".
+
 AUTHOR
     Dorian Taylor, "<dorian at cpan.org>"
 
@@ -76,4 +112,11 @@ LICENSE AND COPYRIGHT
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+
+POD ERRORS
+    Hey! The above document had some coding errors, which are explained
+    below:
+
+    Around line 83:
+        You forgot a '=back' before '=head1'
 
