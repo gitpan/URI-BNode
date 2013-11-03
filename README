@@ -2,7 +2,7 @@ NAME
     URI::BNode - RDF blank node identifiers which are also URI objects
 
 VERSION
-    Version 0.04
+    Version 0.05
 
 SYNOPSIS
         my $bnode = URI::BNode->new;
@@ -112,11 +112,4 @@ LICENSE AND COPYRIGHT
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
-POD ERRORS
-    Hey! The above document had some coding errors, which are explained
-    below:
-
-    Around line 83:
-        You forgot a '=back' before '=head1'
 

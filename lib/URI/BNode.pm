@@ -38,11 +38,11 @@ URI::BNode - RDF blank node identifiers which are also URI objects
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -78,7 +78,7 @@ heuristic:
     # URI::BNode->new('http://foo/') would properly become
     # a URI::http object.
 
-=cut
+=back
 
 =head1 METHODS
 
