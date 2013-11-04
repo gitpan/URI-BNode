@@ -38,11 +38,11 @@ URI::BNode - RDF blank node identifiers which are also URI objects
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 =head1 SYNOPSIS
 
@@ -211,7 +211,9 @@ sub de_skolemize {
 
     # this is a static method
     $class = ref $class || $class;
-    $class->new($candidate);
+
+    # no need to invoke the constructor, candidate is already valid.
+    bless \$candidate, $class;
 }
 
 =head1 AUTHOR

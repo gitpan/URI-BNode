@@ -34,10 +34,10 @@
       },
       "runtime" : {
          "requires" : {
-            "Data::GUID::Any" : "0",
-            "Data::UUID::NCName" : "0",
+            "Data::GUID::Any" : "0.004",
+            "Data::UUID::NCName" : "0.03",
             "URI" : "0",
-            "URI::urn::uuid" : "0",
+            "URI::urn::uuid" : "0.03",
             "perl" : "5.010"
          }
       }
@@ -48,5 +48,5 @@
          "http://apache.org/licenses/LICENSE-2.0"
       ]
    },
-   "version" : "0.04"
+   "version" : "0.06"
 }

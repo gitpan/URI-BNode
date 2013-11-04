@@ -7,9 +7,9 @@ author      q{Dorian Taylor <dorian@cpan.org>};
 license     'apache';
 
 requires 'URI';
-requires 'Data::GUID::Any';
-requires 'Data::UUID::NCName';
-requires 'URI::urn::uuid';
+requires 'Data::GUID::Any'    => '0.004';
+requires 'Data::UUID::NCName' => '0.03';
+requires 'URI::urn::uuid'     => '0.03';
 
 build_requires 'Test::More';
 
